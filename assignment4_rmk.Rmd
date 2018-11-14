@@ -92,3 +92,53 @@ lsa_aov_colplt
 
 ```
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r include = F}
+#___________________________________part 3___________________________________#
+#Changes in lobster size at MPA and non-MPA sites (2012 v 2017)
+
+lsa_MPA = lsa_filt %>% 
+  filter(YEAR == 2012 | YEAR == 2017) %>% 
+  filter(MPA == "y")
+  
+lsa_nonMPA = lsa_filt %>% 
+  filter(YEAR == 2012 | YEAR == 2017) %>% 
+  filter(MPA == "n")
+
+hist_MPA = ggplot(lsa_MPA, aes(SIZE)) +
+  geom_histogram() +
+  facet_wrap(~ YEAR)
+
+hist_nonMPA = ggplot(lsa_nonMPA, aes(SIZE)) +
+  geom_histogram() +
+  facet_wrap(~ YEAR)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
