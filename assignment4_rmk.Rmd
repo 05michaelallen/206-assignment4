@@ -12,12 +12,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r include = F}
 library(tidyverse)
+library(car)
 
 lsa <- read_csv("lobster_size_abundance.csv")
 lt <- read_csv("lobster_traps.csv")
 ```
 
 ```{r include = F}
+#___________________________________part 0___________________________________#
 
 # remove nas and expand rows with count larger than 1
 lsa_filt <- lsa %>%
@@ -30,5 +32,34 @@ lsa_filt <- lsa %>%
     SITE == 'CARP' ~ 'n',
     SITE == 'MOHK' ~ 'n'))
 
+```
+
+
+
+
+```{r}
+
+#___________________________________part 2___________________________________#
+
+# look at site distributions
+
+qq_site_means <- ggplot(lsa_filt, aes(sample = SIZE)) +
+  geom_qq() +
+  facet_wrap(~ SITE) +
+  theme_classic()
+qq_site_means
+
+# find site means, variance, etc.
+lsa_site_means <- lsa_filt %>%
+  group_by(SITE) %>%
+  summarize(
+    mean_size = mean(SIZE),
+    sd_size = sd(SIZE),
+    var_size = var(SIZE)
+  )
+
+# levines test for equal variances
+lsa_levine <- leveneTest(SIZE ~ SITE, data = lsa_filt)
+lsa_levine
 ```
 
