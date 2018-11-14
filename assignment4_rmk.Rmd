@@ -1,0 +1,28 @@
+---
+title: "assignment4"
+author: "na"
+date: "November 14, 2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r include = F}
+library(tidyverse)
+
+lsa <- read_csv("lobster_size_abundance.csv")
+lt <- read_csv("lobster_traps.csv")
+```
+
+```{r include = F}
+
+# remove nas and expand rows with count larger than 1
+lsa_filt <- lsa %>%
+  filter(SIZE != -99999) %>%
+  uncount(weights = COUNT)
+
+```
+
