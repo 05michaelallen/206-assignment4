@@ -22,7 +22,13 @@ lt <- read_csv("lobster_traps.csv")
 # remove nas and expand rows with count larger than 1
 lsa_filt <- lsa %>%
   filter(SIZE != -99999) %>%
-  uncount(weights = COUNT)
+  uncount(weights = COUNT) %>%
+  mutate(mpa = case_when(
+    SITE == 'IVEE' ~ 'y',
+    SITE == 'NAPL' ~ 'y',
+    SITE == 'AQUE' ~ 'n',
+    SITE == 'CARP' ~ 'n',
+    SITE == 'MOHK' ~ 'n'))
 
 ```
 
