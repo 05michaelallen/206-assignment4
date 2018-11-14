@@ -23,7 +23,7 @@ lt <- read_csv("lobster_traps.csv")
 lsa_filt <- lsa %>%
   filter(SIZE != -99999) %>%
   uncount(weights = COUNT) %>%
-  mutate(mpa = case_when(
+  mutate(MPA = case_when(
     SITE == 'IVEE' ~ 'y',
     SITE == 'NAPL' ~ 'y',
     SITE == 'AQUE' ~ 'n',
