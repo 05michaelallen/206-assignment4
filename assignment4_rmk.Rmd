@@ -65,7 +65,8 @@ lsa_site_means <- lsa_filt %>%
     sd_size = sd(SIZE),
     var_size = var(SIZE)
   ) %>%
-  arrange(MPA)
+  arrange(MPA) %>%
+  mutate(yloc = mean_size + sd_size + 2) # loc of annotation
 
 lsa_site_means$SITE <- factor(lsa_site_means$SITE, levels = c("IVEE","NAPL","AQUE","MOHK","CARP"))
 
@@ -78,7 +79,6 @@ lsa_levine
 lsa_aov_size_site <- oneway(lsa_filt$SITE, y = lsa_filt$SIZE, posthoc = 'games-howell')
 lsa_aov_size_site
 
-
 #___________________plot___________________#
 lsa_aov_colplt <- ggplot(lsa_site_means, aes(x = SITE, y = mean_size)) +
   geom_col(fill = "gray50", width = 0.5) +
@@ -86,7 +86,8 @@ lsa_aov_colplt <- ggplot(lsa_site_means, aes(x = SITE, y = mean_size)) +
   geom_errorbar(aes(ymax =mean_size + sd_size, ymin = mean_size - sd_size), width = 0.1) +
   scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
   labs(y=expression(Mean~lobster~carapace~length~(mm))) +
-  #scale_x_discrete(labels = c("Reach A","Reach B","Reach C","Reach D")) +
+  scale_x_discrete(labels = c("Isla Vista","Naples Reef","Arroyo Quemado","Mohawk Reef", "Carpenteria")) +
+  annotate("text", x = c(1,3,5), y = c(88.82993,86.1366,87.38254), label = "*") +
   xlab("\nSite")
 lsa_aov_colplt
 
