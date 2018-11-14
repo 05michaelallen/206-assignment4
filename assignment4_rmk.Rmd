@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r include = F}
 library(tidyverse)
 library(car)
-library(onewaytests)
+library(userfriendlyscience)
 
 lsa <- read_csv("lobster_size_abundance.csv")
 lt <- read_csv("lobster_traps.csv")
@@ -43,7 +43,6 @@ lsa_filt <- lsa %>%
 #___________________________________part 2___________________________________#
 
 # look at site distributions
-
 qq_site_means <- ggplot(lsa_filt, aes(sample = SIZE)) +
   geom_qq() +
   facet_wrap(~ SITE) +
@@ -54,6 +53,9 @@ box_site_means <- ggplot(lsa_filt, aes(x = SITE, y = SIZE)) +
   geom_boxplot() +
   theme_classic()
 box_site_means
+
+# convert site to factor in lsa_filt
+lsa_filt$SITE <- as.factor(lsa_filt$SITE)
 
 # find site means, variance, etc.
 lsa_site_means <- lsa_filt %>%
@@ -69,10 +71,8 @@ lsa_levine <- leveneTest(SIZE ~ SITE, data = lsa_filt)
 lsa_levine
 
 # anova with unequal variances
-lsa_aov_size_site <- aov(SIZE ~ SITE, data = lsa_filt)
-summary(lsa_aov_size_site)
+lsa_aov_size_site <- oneway(lsa_filt$SITE, y = lsa_filt$SIZE, posthoc = 'games-howell')
+lsa_aov_size_site
 
-lsa_aov_size_site1 <- oneway.test(SIZE ~ SITE, data = lsa_filt, var.equal = F)
-lsa_aov_size_site1
 ```
 
