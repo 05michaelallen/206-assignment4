@@ -59,12 +59,16 @@ lsa_filt$SITE <- as.factor(lsa_filt$SITE)
 
 # find site means, variance, etc.
 lsa_site_means <- lsa_filt %>%
-  group_by(SITE) %>%
+  group_by(MPA, SITE) %>%
   summarize(
     mean_size = mean(SIZE),
     sd_size = sd(SIZE),
     var_size = var(SIZE)
-  )
+  ) %>%
+  arrange(MPA)
+
+lsa_site_means$SITE <- factor(lsa_site_means$SITE, levels = c("IVEE","NAPL","AQUE","MOHK","CARP"))
+
 
 # levines test for equal variances
 lsa_levine <- leveneTest(SIZE ~ SITE, data = lsa_filt)
@@ -73,6 +77,18 @@ lsa_levine
 # anova with unequal variances
 lsa_aov_size_site <- oneway(lsa_filt$SITE, y = lsa_filt$SIZE, posthoc = 'games-howell')
 lsa_aov_size_site
+
+
+#___________________plot___________________#
+lsa_aov_colplt <- ggplot(lsa_site_means, aes(x = SITE, y = mean_size)) +
+  geom_col(fill = "gray50", width = 0.5) +
+  theme_classic() +
+  geom_errorbar(aes(ymax =mean_size + sd_size, ymin = mean_size - sd_size), width = 0.1) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
+  labs(y=expression(Mean~lobster~carapace~length~(mm))) +
+  #scale_x_discrete(labels = c("Reach A","Reach B","Reach C","Reach D")) +
+  xlab("\nSite")
+lsa_aov_colplt
 
 ```
 
