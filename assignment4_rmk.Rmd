@@ -2,9 +2,7 @@
 title: "assignment4"
 author: "na"
 date: "November 14, 2018"
-output:
-  html_document:
-    df_print: paged
+output: word_document
 ---
 
 ```{r setup, include=FALSE}
@@ -125,7 +123,7 @@ ggsave(filename = "colplotlobstersize.png", plot = lsa_aov_colplt,
   dpi = 300)
 
 #___________________table___________________#
-lsa_aov_table <- lsa_site_means %>%
+lsa_aov_tabledf <- lsa_site_means %>%
   ungroup() %>%
   mutate(sitel = case_when(
     SITE == "IVEE" ~ "Isla Vista",
@@ -134,16 +132,16 @@ lsa_aov_table <- lsa_site_means %>%
     SITE == "CARP" ~ "Carpinteria",
     SITE == "MOHK" ~ "Mohawk Reef")
     ) %>%
-  select(sitel, mean_size, sd_size, n) %>%
-  kable(format = "html", 
-      caption = "Table 1. Mean and standard deviation of lobster carapace length at five California sites in 2017. Source: Santa   Barbara Coastal Long Term Ecological Research Project.", 
-      col.names=c('Site',
-                  'Mean carapace length (mm)',
-                  'Standard deviation of carapace length (mm)',
-                  'n'),
-      digits=2) %>%
-  kable_styling(bootstrap_options = "condensed", full_width = F)
+  select(sitel, mean_size, sd_size, n)
 
+lsa_aov_table <- kable(lsa_aov_tabledf, 
+                       format = "markdown",
+                       caption = "Table 1. Mean and standard deviation of lobster carapace length at five California sites in 2017. Source: Santa   Barbara Coastal Long Term Ecological Research Project.", 
+                       col.names=c('Site',
+                                   'Mean carapace length (mm)',
+                                   'Standard deviation of carapace length (mm)',
+                                   'n'),
+                       digits=2)
 lsa_aov_table
 ```
 
