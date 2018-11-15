@@ -2,7 +2,9 @@
 title: "assignment4"
 author: "na"
 date: "November 14, 2018"
-output: word_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -14,6 +16,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(car)
 library(userfriendlyscience)
+library(knitr)
+library(kableExtra)
 
 lsa <- read_csv("lobster_size_abundance.csv")
 lt <- read_csv("lobster_traps.csv")
@@ -39,7 +43,6 @@ lsa_filt <- lsa %>%
 
 
 ```{r}
-
 #___________________________________part 2___________________________________#
 
 # filter for only 2017
@@ -67,7 +70,8 @@ lsa_site_means <- lsa_filt2017 %>%
   summarize(
     mean_size = mean(SIZE),
     sd_size = sd(SIZE),
-    var_size = var(SIZE)
+    var_size = var(SIZE),
+    n = length(SIZE)
   ) %>%
   arrange(MPA) %>%
   mutate(yloc = mean_size + sd_size + 3.5) # loc of annotation
@@ -80,7 +84,7 @@ lsa_levine <- leveneTest(SIZE ~ SITE, data = lsa_filt2017)
 lsa_levine
 
 # anova with unequal variances
-lsa_aov_size_site <- oneway(lsa_filt2017$SITE, y = lsa_filt2017$SIZE, posthoc = 'games-howell')
+lsa_aov_size_site <- oneway(lsa_filt2017$SITE, y = lsa_filt2017$SIZE, posthoc = 'games-howell', corrections = F, levene = T)
 lsa_aov_size_site
 
 # y loc for annotations
@@ -119,6 +123,28 @@ lsa_aov_colplt
 ggsave(filename = "colplotlobstersize.png", plot = lsa_aov_colplt,
   scale = 1, width = 6, height = 4.5, units = "in",
   dpi = 300)
+
+#___________________table___________________#
+lsa_aov_table <- lsa_site_means %>%
+  ungroup() %>%
+  mutate(sitel = case_when(
+    SITE == "IVEE" ~ "Isla Vista",
+    SITE == "NAPL" ~ "Naples Reef",
+    SITE == "AQUE" ~ "Arroyo Quemado",
+    SITE == "CARP" ~ "Carpinteria",
+    SITE == "MOHK" ~ "Mohawk Reef")
+    ) %>%
+  select(sitel, mean_size, sd_size, n) %>%
+  kable(format = "html", 
+      caption = "Table 1. Mean and standard deviation of lobster carapace length at five California sites in 2017. Source: Santa   Barbara Coastal Long Term Ecological Research Project.", 
+      col.names=c('Site',
+                  'Mean carapace length (mm)',
+                  'Standard deviation of carapace length (mm)',
+                  'n'),
+      digits=2) %>%
+  kable_styling(bootstrap_options = "condensed", full_width = F)
+
+lsa_aov_table
 ```
 
 
