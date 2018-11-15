@@ -165,37 +165,83 @@ lsa_aov_table
 #___________________________________part 3___________________________________#
 #Changes in lobster size at MPA and non-MPA sites (2012 v 2017)
 
+#Dataframes for comparing 2012 to 2017 at MPA site and then nonMPA sites. 
 lsa_MPA = lsa_filt %>% 
   filter(YEAR == 2012 | YEAR == 2017) %>% 
-  filter(MPA == "y")
-  
+  filter(MPA == "y") %>% 
+  group_by(YEAR)
 lsa_nonMPA = lsa_filt %>% 
   filter(YEAR == 2012 | YEAR == 2017) %>% 
-  filter(MPA == "n")
+  filter(MPA == "n") %>% 
+  group_by(YEAR)
 
+#MPA samples look to be normally distributed
 hist_MPA = ggplot(lsa_MPA, aes(SIZE)) +
   geom_histogram() +
   facet_wrap(~ YEAR)
+qq_nonMPA = ggplot(lsa_nonMPA, aes(sample = SIZE)) +
+  geom_qq() + 
+  facet_wrap(~ YEAR)
 
+#nonMPA samples look to be normally distributed
 hist_nonMPA = ggplot(lsa_nonMPA, aes(SIZE)) +
   geom_histogram() +
   facet_wrap(~ YEAR)
-
 qq_MPA = ggplot(lsa_MPA, aes(sample = SIZE)) +
   geom_qq() + 
   facet_wrap(~ YEAR) 
 
-qq_nonMPA = ggplot(lsa_nonMPA, aes(sample = SIZE)) +
-  geom_qq() + 
-  facet_wrap(~ YEAR) 
 
+
+#Compare sample means of MPA 2012 vs 2017 sizes (two sample t.test)
+
+#Vectors of 2012 and 2016 MPA
+MPA12 = lsa_MPA %>% 
+  filter(YEAR == "2012") %>% 
+  pull(SIZE)
+MPA17 = lsa_MPA %>% 
+  filter(YEAR == "2017") %>% 
+  pull(SIZE)
+
+#Test for equal variance:
+ftest_MPA = var.test(MPA12,MPA17) # p = .33, variances are equal
+
+#Compare means with two sample t.test where varaiances are equal
+ttest_MPA = t.test(MPA12,MPA17, var.equal = T)
+ttest_MPA # p = .056 fail to reject null of no difference, not that unlikely to have pulled these sample means from populations with the same mean.
+
+
+
+
+#Compare sample means of nonMPA 2012 vs 2017 sizes (two sample t.test)
+
+#Vectors of 2012 and 2016 nonMPA
+nonMPA12 = lsa_nonMPA %>% 
+  filter(YEAR == "2012") %>% 
+  pull(SIZE)
+nonMPA17 = lsa_nonMPA %>% 
+  filter(YEAR == "2017") %>% 
+  pull(SIZE)
+
+#Test for equal variance:
+ftest_nonMPA = var.test(nonMPA12,nonMPA17) # p = .95, variances are equal
+
+#Compare means with two sample t.test where varaiances are equal
+ttest_nonMPA = t.test(nonMPA12,nonMPA17, var.equal = T)
+ttest_nonMPA # p = .007, reject null of no difference, likely that these sample means are from populations with different means. 
+
+#Effect size:
+esize_nonMPA = cohen.d(nonMPA12, nonMPA17)
 ```
 
 
+Significance result for MPA t.test between 2012 and 2017:
+(t(`r {ttest_MPA$parameter}`) = `r {round(ttest_MPA$statistic,3)}`, p = `r {round(ttest_MPA$p.value, 3)}`, $\alpha$ = 0.05)
 
-
-
-
+Significance result for nonMPA t.test between 2012 and 2017:
+(t(`r {ttest_nonMPA$parameter}`) = `r {round(ttest_nonMPA$statistic,3)}`, p = `r {round(ttest_nonMPA$p.value, 3)}`, $\alpha$ = 0.05)
+effect size small:
+(Cohen's $d$ = `r round(efsize_nonMPA$estimate, 2) `) 
 
 
 
