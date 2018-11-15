@@ -116,5 +116,8 @@ lsa_aov_colplt <- ggplot(lsa_site_means, aes(x = SITE, y = mean_size)) +
   xlab("\nSite")
 lsa_aov_colplt
 
+ggsave(filename = "colplotlobstersize.png", plot = lsa_aov_colplt,
+  scale = 1, width = 6, height = 4.5, units = "in",
+  dpi = 300)
 ```
 
