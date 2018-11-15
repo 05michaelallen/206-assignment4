@@ -42,41 +42,63 @@ lsa_filt <- lsa %>%
 
 #___________________________________part 2___________________________________#
 
+# filter for only 2017
+lsa_filt2017 <- lsa_filt %>%
+  filter(YEAR == 2017)
+
 # look at site distributions
-qq_site_means <- ggplot(lsa_filt, aes(sample = SIZE)) +
+qq_site_means <- ggplot(lsa_filt2017, aes(sample = SIZE)) +
   geom_qq() +
   facet_wrap(~ SITE) +
   theme_classic()
 qq_site_means
 
-box_site_means <- ggplot(lsa_filt, aes(x = SITE, y = SIZE)) +
+box_site_means <- ggplot(lsa_filt2017, aes(x = SITE, y = SIZE)) +
   geom_boxplot() +
   theme_classic()
 box_site_means
 
 # convert site to factor in lsa_filt
-lsa_filt$SITE <- as.factor(lsa_filt$SITE)
+lsa_filt2017$SITE <- as.factor(lsa_filt2017$SITE)
 
 # find site means, variance, etc.
-lsa_site_means <- lsa_filt %>%
+lsa_site_means <- lsa_filt2017 %>%
   group_by(MPA, SITE) %>%
   summarize(
     mean_size = mean(SIZE),
     sd_size = sd(SIZE),
     var_size = var(SIZE)
   ) %>%
-  arrange(MPA)
+  arrange(MPA) %>%
+  mutate(yloc = mean_size + sd_size + 3.5) # loc of annotation
 
 lsa_site_means$SITE <- factor(lsa_site_means$SITE, levels = c("IVEE","NAPL","AQUE","MOHK","CARP"))
 
 
 # levines test for equal variances
-lsa_levine <- leveneTest(SIZE ~ SITE, data = lsa_filt)
+lsa_levine <- leveneTest(SIZE ~ SITE, data = lsa_filt2017)
 lsa_levine
 
 # anova with unequal variances
-lsa_aov_size_site <- oneway(lsa_filt$SITE, y = lsa_filt$SIZE, posthoc = 'games-howell')
+lsa_aov_size_site <- oneway(lsa_filt2017$SITE, y = lsa_filt2017$SIZE, posthoc = 'games-howell')
 lsa_aov_size_site
+
+# y loc for annotations
+yloc_i <- lsa_site_means %>%
+  filter(SITE == "IVEE") %>%
+  pull(yloc)
+
+yloc_n <- lsa_site_means %>%
+  filter(SITE == "NAPL") %>%
+  pull(yloc)
+
+yloc_c <- lsa_site_means %>%
+  filter(SITE == "CARP") %>%
+  pull(yloc)
+
+yloc_m <- lsa_site_means %>%
+  filter(SITE == "MOHK") %>%
+  pull(yloc)
 
 
 #___________________plot___________________#
@@ -86,10 +108,17 @@ lsa_aov_colplt <- ggplot(lsa_site_means, aes(x = SITE, y = mean_size)) +
   geom_errorbar(aes(ymax =mean_size + sd_size, ymin = mean_size - sd_size), width = 0.1) +
   scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
   labs(y=expression(Mean~lobster~carapace~length~(mm))) +
-  #scale_x_discrete(labels = c("Reach A","Reach B","Reach C","Reach D")) +
+  scale_x_discrete(labels = c("Isla Vista","Naples Reef","Arroyo Quemado","Mohawk Reef", "Carpenteria")) +
+  annotate("text", x = c(1), y = yloc_i, label = "a") +
+  annotate("text", x = c(2), y = yloc_n, label = "a, b, c") +
+  annotate("text", x = c(5), y = yloc_c, label = "b") +
+  annotate("text", x = c(4), y = yloc_m, label = "c") +
   xlab("\nSite")
 lsa_aov_colplt
 
+ggsave(filename = "colplotlobstersize.png", plot = lsa_aov_colplt,
+  scale = 1, width = 6, height = 4.5, units = "in",
+  dpi = 300)
 ```
 
 
