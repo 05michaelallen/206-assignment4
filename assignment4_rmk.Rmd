@@ -157,6 +157,14 @@ hist_nonMPA = ggplot(lsa_nonMPA, aes(SIZE)) +
   geom_histogram() +
   facet_wrap(~ YEAR)
 
+qq_MPA = ggplot(lsa_MPA, aes(sample = SIZE)) +
+  geom_qq() + 
+  facet_wrap(~ YEAR) 
+
+qq_nonMPA = ggplot(lsa_nonMPA, aes(sample = SIZE)) +
+  geom_qq() + 
+  facet_wrap(~ YEAR) 
+
 ```
 
 
