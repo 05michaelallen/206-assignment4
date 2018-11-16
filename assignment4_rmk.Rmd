@@ -245,7 +245,7 @@ effect size small:
 (Cohen's $d$ = `r round(esize_nonMPA$estimate, 2) `) 
 
 
-```{r include F}
+```{r}
 #___________________________________part 4___________________________________#
 #Proportions of “legal” lobsters at the 5 sites in 2017
 #The legal minimum carapace size for lobster is 82.6 mm
@@ -254,6 +254,7 @@ lsa_legal <- lsa_filt2017 %>%
   mutate(legal = case_when(
     SIZE > 82.6 ~ "y",
          SIZE < 82.6 ~ "n"))
+
 
 sum_legal <- lsa_legal %>% 
   group_by(SITE) %>% 
@@ -267,15 +268,66 @@ sum_illegal <- lsa_legal %>%
   summarize( 
     illegal = length(legal))
 
-legal_joined <- left_join(sum_legal, sum_illegal, by = "SITE")
+legal_joined <- left_join(sum_legal, sum_illegal, by = "SITE") %>% 
+  select(legal, illegal)
+
+rownames(legal_joined) <- c('Arroyo Quemado', 'Carpenteria', 'Isla Vista', 'Mohawk Reef', 'Naples Reef')
+
 #legal_table <- legal_joined create matrix
 
-#prop <- prop.table(as.matrix(legal_joined), 2)
+prop <- prop.table(as.matrix(legal_joined), 1)
+
+prop_rounded <- round (prop, 2) #Round proportions to 2 digits
+prop_rounded
+
+prop_table <- kable(prop_rounded, 
+                    format = "markdown", 
+                    caption = "Table 2. Proportion of lobsters that are above the legal minimum carapace size for lobster (82.6 mm) at five California sites in 2017. Source: Santa Barbara Coastal Long Term Ecological Research Project.", 
+      col.names = c('Proportion Above Minimum Size', 'Proportion Below Min Size'))
+
+prop_table
+
+
+legal_chi <- chisq.test(legal_joined)
+legal_chi
  
-
 ```
+A greater proportion of lobsters are below the legal minimum carapace size than above for all locations. The proportion of legal sized lobsters is smallest at Mohawk Reef as there is rougly 7 times more lobsters as this site that do not meet the legal minimum size. Naples Reef has the largest proportion of legal sized lobsters, roughly half that of the proportion of lobsters below the minimum size. 
 
 
+**Research Question**: Is perception of UCSB's responsiveness to family needs dependent on gender?
 
+**Research Question**: Is there an association between site and proportion of "legal" lobsters? 
+
+#### Hypothesis Testing & Chi Square
+
+Null Hypothesis: Location is independent of proportions of lobsters that are above the legal minimum. 
+Alternative Hypothesis: Proportions of lobsters that are above the minimum size requirement are significantly different between sites.
+
+**Conclusion**: Proportions of lobsters that are above the minimum size requirement differs significantly by site ($\chi$^2^(`r {legal_chi$parameter}`) = `r {round(legal_chi$statistic, 3)}`, *p* < 0.001,  $\alpha$ = 0.05).  
+
+```{r}
+
+legal_chi$observed
+round(legal_chi$expected,0)
+
+legal_chi$stdres #if standardized residuals are >2 this might be driving the significant finding
+```
+Naples and Mohawk Reefs might be driving significance. 
+
+```{r}
+
+legal_expand <- data.frame(expand.grid(rownames(prop), colnames(prop)), value = c(prop)) # moves from a contigency table format to an expanded table format where we can expand either row or column and then by what value
+
+colnames(legal_expand) <- c("Site","Legality","Proportion")
+View(legal_expand)
+
+stacked_legal <- ggplot(legal_expand, aes(x = Site, y = Proportion)) +
+  geom_col(aes(fill = Legality), width = 0.5) +
+  theme_classic() +
+  coord_flip()
+
+stacked_legal
+```
 
 
