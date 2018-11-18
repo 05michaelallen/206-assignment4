@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 title: "assignment4"
 author: "na"
@@ -429,3 +430,431 @@ Alternative Hypothesis: Proportions of lobsters that are above the minimum size 
 ```
 
 
+=======
+---
+title: "assignment4"
+author: "na"
+date: "November 14, 2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r include = F}
+library(tidyverse)
+library(car)
+library(userfriendlyscience)
+library(knitr)
+library(kableExtra)
+library(effsize)
+
+lsa <- read_csv("lobster_size_abundance.csv")
+lt <- read_csv("lobster_traps.csv")
+```
+
+```{r include = F}
+#___________________________________part 0___________________________________#
+
+# remove nas and expand rows with count larger than 1
+lsa_filt <- lsa %>%
+  filter(SIZE != -99999) %>%
+  uncount(weights = COUNT) %>%
+  mutate(MPA = case_when(
+    SITE == 'IVEE' ~ 'y',
+    SITE == 'NAPL' ~ 'y',
+    SITE == 'AQUE' ~ 'n',
+    SITE == 'CARP' ~ 'n',
+    SITE == 'MOHK' ~ 'n'))
+
+lt_filt <- lt %>% 
+  filter(SITE == "AQUE" | SITE == "CARP" | SITE == "IVEE" | SITE == "MOHK" | SITE == "NAPL")
+
+```
+
+```{r}
+#___________________________________part 1___________________________________#
+#column graphs of lobster abundance by year at each of the 5 sites
+size_summary <- lsa_filt %>% 
+  group_by(SITE, YEAR) %>% 
+  filter(YEAR == "2012" | YEAR == "2013" | YEAR == "2014" | YEAR == "2015" | YEAR == "2016" | YEAR == "2017") %>% 
+  summarize(
+    lobster_count = length(SIZE)
+  )
+size_summary
+labels <- c(AQUE = "Arroyo Quemado", CARP = "Carpinteria", IVEE = "Isla Vista", MOHK = "Mohawk Reef", NAPL = "Naples Reef")
+abundance <- ggplot(size_summary, aes(x = YEAR, y = lobster_count))+
+  geom_col(aes(fill = SITE)) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_classic() +
+  xlab("\nYear") +
+  ylab("Lobster Count\n") +
+  facet_wrap(~SITE, scale = "free", labeller = labeller(SITE = labels)) +
+  theme(legend.position = "none") +
+  theme(panel.spacing = unit(1, "lines"))
+abundance
+  
+```
+**Figure 1. Abundance of the California Spiny Lobster at Five Long-Term Ecological Research Sites in the Santa Barbara Channel (2012-2017).** Lobster abundance data for Panulirus interruptus are collected by divers at five sites each year in late summer, before the start of the fishing season. These sites include Arroyo Quemado, Naples Reef, Mohawk Reef, Isla Vista, and Carpinteria. Naples Reef and Isla Vista are within marine protected areas; Arroyo Quemado, Mohawk, and Carpenteria are outside marine protected areas. Source: Reed, D. 2017. SBC LTER: Reef: Abundance, size and fishing effort for California Spiny Lobster (Panulirus interruptus), ongoing since 2012. Santa Barbara Coastal Long Term Ecological Research Project.
+
+
+```{r}
+#Column graph of fishing pressure (trap buoys) by year at each of the 5 sites
+trap_summary <- lt_filt %>% 
+  group_by(SITE, YEAR) %>% 
+  filter(YEAR == "2012" | YEAR == "2013" | YEAR == "2014" | YEAR == "2015" | YEAR == "2016" | YEAR == "2017") %>% 
+  summarize(
+    trap_count = sum(TRAPS)
+  )
+traps <- ggplot(lt_filt, aes(x = YEAR, y = TRAPS))+
+  geom_col(aes(fill = SITE)) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_classic() +
+  xlab("\nYear") +
+  ylab("Number of Traps\n") +
+  facet_wrap(~SITE, scale = "free", labeller = labeller(SITE = labels)) +
+  theme(legend.position = "none") +
+  theme(panel.spacing = unit(1, "lines"))
+  
+traps
+```
+**Figure 2. Lobster Trap Floats at Five Long-Term Ecological Research Sites in the Santa Barbara Channel (2012-2017).** Commerical lobster trap float counts are recorded every two to four weeks during the lobster fishing season (October to March). The abundance of lobster trap buoys are an indicator of fishing pressure. Since Naples Reef and Isla Vista are within Marine Protected Areas, there are no commerical trap floats deployed. Source: Reed, D. 2017. SBC LTER: Reef: Abundance, size and fishing effort for California Spiny Lobster (Panulirus interruptus), ongoing since 2012. Santa Barbara Coastal Long Term Ecological Research Project.
+
+Table 1. Lobster abundance (counts) and fishing pressure (trap buoys) at five Long Term Ecological Research Sites in Santa Barbara Channel (2012 -2017).
+```{r}
+
+lsa_lt_joined <- left_join(size_summary, trap_summary, by = c("SITE", "YEAR"))
+lsa_lt_joined
+
+lsa_lt_table <- kable(lsa_lt_joined, 
+                      format = "markdown",
+                      col.names = c("Site", "Year", "Lobster Count", "Trap Count")) %>% 
+   kable_styling(bootstrap_options = c("border","condensed","striped"))
+  lsa_lt_table
+
+```
+
+
+```{r}
+#___________________________________part 2___________________________________#
+
+# filter for only 2017
+lsa_filt2017 <- lsa_filt %>%
+  filter(YEAR == 2017)
+
+# look at site distributions
+qq_site_means <- ggplot(lsa_filt2017, aes(sample = SIZE)) +
+  geom_qq() +
+  facet_wrap(~ SITE) +
+  theme_classic()
+qq_site_means
+
+box_site_means <- ggplot(lsa_filt2017, aes(x = SITE, y = SIZE)) +
+  geom_boxplot() +
+  theme_classic()
+box_site_means
+
+# convert site to factor in lsa_filt
+lsa_filt2017$SITE <- as.factor(lsa_filt2017$SITE)
+
+# find site means, variance, etc.
+lsa_site_means <- lsa_filt2017 %>%
+  group_by(MPA, SITE) %>%
+  summarize(
+    mean_size = mean(SIZE),
+    sd_size = sd(SIZE),
+    var_size = var(SIZE),
+    n = length(SIZE)
+  ) %>%
+  arrange(MPA) %>%
+  mutate(yloc = mean_size + sd_size + 3.5) # loc of annotation
+
+lsa_site_means$SITE <- factor(lsa_site_means$SITE, levels = c("IVEE","NAPL","AQUE","MOHK","CARP"))
+
+
+# levenes test for equal variances
+lsa_levene <- leveneTest(SIZE ~ SITE, data = lsa_filt2017)
+lsa_levene
+
+#Result: variances are NOT equal, but largest variance is less than 4 times the smallest variance, so we can still do an ANOVA
+
+# anova with unequal variances
+lsa_aov_size_site <- oneway(lsa_filt2017$SITE, y = lsa_filt2017$SIZE, posthoc = 'games-howell', corrections = F, levene = T)
+lsa_aov_size_site
+
+# y loc for annotations
+yloc_i <- lsa_site_means %>%
+  filter(SITE == "IVEE") %>%
+  pull(yloc)
+
+yloc_n <- lsa_site_means %>%
+  filter(SITE == "NAPL") %>%
+  pull(yloc)
+
+yloc_c <- lsa_site_means %>%
+  filter(SITE == "CARP") %>%
+  pull(yloc)
+
+yloc_m <- lsa_site_means %>%
+  filter(SITE == "MOHK") %>%
+  pull(yloc)
+
+
+#___________________plot___________________#
+lsa_aov_colplt <- ggplot(lsa_site_means, aes(x = SITE, y = mean_size)) +
+  geom_col(fill = "gray50", width = 0.5) +
+  theme_classic() +
+  geom_errorbar(aes(ymax =mean_size + sd_size, ymin = mean_size - sd_size), width = 0.1) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
+  labs(y=expression(Mean~lobster~carapace~length~(mm))) +
+  scale_x_discrete(labels = c("Isla Vista","Naples Reef","Arroyo Quemado","Mohawk Reef", "Carpenteria")) +
+  annotate("text", x = c(1), y = yloc_i, label = "a") +
+  annotate("text", x = c(2), y = yloc_n, label = "a, b, c") +
+  annotate("text", x = c(5), y = yloc_c, label = "b") +
+  annotate("text", x = c(4), y = yloc_m, label = "c") +
+  xlab("\nSite")
+lsa_aov_colplt
+
+ggsave(filename = "colplotlobstersize.png", plot = lsa_aov_colplt,
+  scale = 1, width = 6, height = 4.5, units = "in",
+  dpi = 300)
+
+#___________________table___________________#
+lsa_aov_tabledf <- lsa_site_means %>%
+  ungroup() %>%
+  mutate(sitel = case_when(
+    SITE == "IVEE" ~ "Isla Vista",
+    SITE == "NAPL" ~ "Naples Reef",
+    SITE == "AQUE" ~ "Arroyo Quemado",
+    SITE == "CARP" ~ "Carpinteria",
+    SITE == "MOHK" ~ "Mohawk Reef")
+    ) %>%
+  select(sitel, mean_size, sd_size, n)
+
+lsa_aov_table <- kable(lsa_aov_tabledf, 
+                       format = "markdown",
+                       caption = "Table 2. Mean and standard deviation of lobster carapace length at five California sites in 2017. Source: Santa   Barbara Coastal Long Term Ecological Research Project.", 
+                       col.names=c('Site',
+                                   'Mean carapace length (mm)',
+                                   'Standard deviation of carapace length (mm)',
+                                   'n'),
+                       digits=2)
+lsa_aov_table
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r include = F}
+#___________________________________part 3___________________________________#
+#Changes in lobster size at MPA and non-MPA sites (2012 v 2017)
+
+#Dataframes for comparing 2012 to 2017 at MPA site and then nonMPA sites. 
+
+#MPA Sites:
+lsa_IVEE = lsa_filt %>% 
+  filter(YEAR == 2012 | YEAR == 2017) %>% 
+  filter(SITE == "IVEE") 
+lsa_NAPL = lsa_filt %>% 
+  filter(YEAR == 2012 | YEAR == 2017) %>% 
+  filter(SITE == "NAPL") 
+
+#NonMPA Sites:
+lsa_MOHK = lsa_filt %>% 
+  filter(YEAR == 2012 | YEAR == 2017) %>% 
+  filter(SITE == "MOHK") 
+lsa_CARP = lsa_filt %>% 
+  filter(YEAR == 2012 | YEAR == 2017) %>% 
+  filter(SITE == "CARP") 
+lsa_AQUE = lsa_filt %>% 
+  filter(YEAR == 2012 | YEAR == 2017) %>% 
+  filter(SITE == "AQUE") 
+
+#Summary table:
+lsa_sum_2012 = lsa_filt %>% 
+  filter(YEAR == "2012") %>% 
+  group_by(SITE) %>% 
+  summarize(
+    mean = mean(SIZE),
+    sd = sd(SIZE)
+  )
+lsa_sum_2017 = lsa_filt %>% 
+  filter(YEAR == "2017") %>% 
+  group_by(SITE) %>% 
+  summarize(
+    mean = mean(SIZE),
+    sd = sd(SIZE)
+  )
+
+
+
+#ALL SITES look to be normally distributed
+lsa_2012_2017 = lsa_filt %>% 
+  filter(YEAR == 2012 | YEAR == 2017)
+hists = ggplot(lsa_2012_2017, aes(SIZE)) +
+  geom_histogram() +
+  facet_wrap(SITE ~ YEAR) 
+hists
+
+qqs = ggplot(lsa_2012_2017, aes(sample = SIZE)) +
+  geom_qq() + 
+  facet_wrap(SITE ~ YEAR) 
+qqs
+
+
+
+
+#Compare sample means of each site 2012 vs 2017 sizes for each site (two sample t.test)
+
+#Vectors of 2012 and 2016 for each site
+IVEE_12 = lsa_IVEE %>%
+  filter(YEAR == "2012") %>%
+  pull(SIZE)
+IVEE_17 = lsa_IVEE %>%
+  filter(YEAR == "2017") %>%
+  pull(SIZE)
+NAPL_12 = lsa_NAPL %>%
+  filter(YEAR == "2012") %>%
+  pull(SIZE)
+NAPL_17 = lsa_NAPL %>%
+  filter(YEAR == "2017") %>%
+  pull(SIZE)
+MOHK_12 = lsa_MOHK %>%
+  filter(YEAR == "2012") %>%
+  pull(SIZE)
+MOHK_17 = lsa_MOHK %>%
+  filter(YEAR == "2017") %>%
+  pull(SIZE)
+CARP_12 = lsa_CARP %>%
+  filter(YEAR == "2012") %>%
+  pull(SIZE)
+CARP_17 = lsa_CARP %>%
+  filter(YEAR == "2017") %>%
+  pull(SIZE)
+AQUE_12 = lsa_AQUE %>%
+  filter(YEAR == "2012") %>%
+  pull(SIZE)
+AQUE_17 = lsa_AQUE %>%
+  filter(YEAR == "2017") %>%
+  pull(SIZE)
+
+#Test for equal variance at each site:
+ftest_IVEE = var.test(IVEE_12,IVEE_17) # p = .31, variances are equal 
+ftest_NAPL = var.test(NAPL_12,NAPL_17) # p = .77, variances are equal 
+ftest_MOHK = var.test(MOHK_12,MOHK_17) # p = .15, variances are equal 
+ftest_CARP = var.test(CARP_12,CARP_17) # p = .20, variances are equal 
+ftest_AQUE = var.test(AQUE_12,AQUE_17) # p = .30, variances are equal 
+
+#Compare means with two sample t.test where varaiances are equal for each site:
+ttest_IVEE = t.test(IVEE_12,IVEE_17, var.equal = T)
+ttest_IVEE
+ttest_NAPL = t.test(NAPL_12,NAPL_17, var.equal = T)
+ttest_NAPL
+ttest_MOHK = t.test(MOHK_12,MOHK_17, var.equal = T)
+ttest_MOHK
+ttest_CARP = t.test(CARP_12,CARP_17, var.equal = T)
+ttest_CARP
+ttest_AQUE = t.test(AQUE_12,AQUE_17, var.equal = T)
+ttest_AQUE
+
+
+
+#Effect size from MOHK:
+esize_MOHK = cohen.d(MOHK_12, MOHK_17)
+esize_MOHK
+```
+The sample mean lobster size ($mm$) in the *IVEE* were *NOT significantly* different between 2012 (66.1 ± 12.1 mm) and 2017 (71.5 ± 14.3 cm) according to a two-sample Student’s t-test (t(`r {ttest_IVEE$parameter}`) = `r {round(ttest_IVEE$statistic,3)}`, p = 0.060, $\alpha$ = 0.05).
+
+The sample mean lobster size ($mm$) in the *NAPL* were *NOT significantly* different between 2012 (73 ± 11.7 mm) and 2017 (76.2 ± 11.4 cm) according to a two-sample Student’s t-test (t(`r {ttest_NAPL$parameter}`) = `r {round(ttest_NAPL$statistic,3)}`, p = 0.500, $\alpha$ = 0.05).
+
+The sample mean lobster size ($mm$) in the *MOHK* were *significantly* different between 2012 (77.3 ± 10.6 mm) and 2017 (72 ± 9.28 cm) according to a two-sample Student’s t-test (t(`r {ttest_MOHK$parameter}`) = `r {round(ttest_MOHK$statistic,3)}`, p < 0.001, $\alpha$ = 0.05). Additionally, the effect size is moderate (`r {esize_MOHK$method}` = `r {round(esize_MOHK$estimate,2)}`).
+
+The sample mean lobster size ($mm$) in the *CARP* were *NOT significantly* different between 2012 (74.4 ± 14.6 mm) and 2017 (72.2 ± 13.2 cm) according to a two-sample Student’s t-test (t(`r {ttest_CARP$parameter}`) = `r {round(ttest_CARP$statistic,3)}`, p = 0.182, $\alpha$ = 0.05).
+
+The sample mean lobster size ($mm$) in the *AQUE* were *NOT significantly* different between 2012 (71 ± 10.2 mm) and 2017 (73.9 ± 11.9 cm) according to a two-sample Student’s t-test (t(`r {ttest_AQUE$parameter}`) = `r {round(ttest_AQUE$statistic,3)}`, p = 0.201, $\alpha$ = 0.05). 
+
+```{r}
+#___________________________________part 4___________________________________#
+#Proportions of “legal” lobsters at the 5 sites in 2017
+#The legal minimum carapace size for lobster is 82.6 mm
+legal_size <- lsa_filt2017 %>%
+    mutate(
+     SIZE = case_when(
+      SIZE <= 82.6 ~ "not legal", 
+      SIZE > 82.6 ~ "legal"
+    )
+  ) %>%
+  count(SITE, SIZE) %>%
+  spread(SIZE, n) %>% 
+  select(-SITE)
+   
+rownames(legal_size)<- c('Arroyo Quemado', 'Carpenteria', 'Isla Vista', 'Mohawk Reef', 'Naples Reef')
+
+prop <- prop.table(as.matrix(legal_size), 1)
+
+prop_rounded <- round (prop, 2) #Round proportions to 2 digits
+prop_rounded
+
+prop_table <- kable(prop_rounded, 
+                    format = "markdown", 
+                    caption = "Table 3. Proportion of lobsters that are above the legal minimum carapace size for lobster (82.6 mm) at five California sites in 2017. Source: Santa Barbara Coastal Long Term Ecological Research Project.", 
+      col.names = c('Proportion Above Minimum Size', 'Proportion Below Min Size'))
+
+prop_table
+#Run the chi-square test.
+legal_chi <- chisq.test(prop_rounded)
+legal_chi
+
+
+
+```
+
+A greater proportion of lobsters are below the legal minimum carapace size than above for all locations. The proportion of legal sized lobsters is smallest at Mohawk Reef as there is rougly 7 times more lobsters as this site that do not meet the legal minimum size. Naples Reef has the largest proportion of legal sized lobsters, roughly half that of the proportion of lobsters below the minimum size. 
+
+
+**Research Question**: Is there an association between site and proportion of "legal" lobsters? 
+
+#### Hypothesis Testing & Chi Square
+
+Null Hypothesis: Location is independent of proportions of lobsters that are above the legal minimum. 
+Alternative Hypothesis: Proportions of lobsters that are above the minimum size requirement are significantly different between sites.
+
+**Conclusion**: Proportions of lobsters that are above the minimum size requirement do not differ significantly by site ($\chi$^2^(`r {legal_chi$parameter}`) = `r {round(legal_chi$statistic, 3)}`, p-value = `r {round(legal_chi$p.value, 3)}`,  $\alpha$ = 0.05).  
+
+```{r}
+# 
+# legal_chi$observed
+# round(legal_chi$expected,0)
+# 
+# legal_chi$stdres #if standardized residuals are >2 this might be driving the significant finding
+# 
+# legal_expand <- data.frame(expand.grid(rownames(prop), colnames(prop)), value = c(prop)) # moves from a contigency table format to an expanded table format where we can expand either row or column and then by what value
+# 
+# colnames(legal_expand) <- c("Site","Legality","Proportion")
+# View(legal_expand)
+# 
+# stacked_legal <- ggplot(legal_expand, aes(x = Site, y = Proportion)) +
+#   geom_col(aes(fill = Legality), width = 0.5) +
+#   theme_classic() +
+#   coord_flip()
+# 
+# stacked_legal
+```
+
+
+>>>>>>> e79159b99ff3e7a7b47473dd8e3f8bf6e7a88b13
