@@ -145,7 +145,12 @@ lsa_site_means$SITE <- factor(lsa_site_means$SITE, levels = c("IVEE","NAPL","AQU
 lsa_levene <- leveneTest(SIZE ~ SITE, data = lsa_filt2017)
 lsa_levene
 
-#Result: variances are NOT equal, but largest variance is less than 4 times the smallest variance, so we can still do an ANOVA
+lobster_anova <- aov(SIZE ~ SITE, data = lsa_filt2017)
+summary(lobster_anova)
+
+lobster_tukey <- TukeyHSD(lobster_anova)
+lobster_tukey 
+# There is a significant difference between NAPL-CARP, NAPL-IVEE at alpha=.05
 
 # anova with unequal variances
 lsa_aov_size_site <- oneway(lsa_filt2017$SITE, y = lsa_filt2017$SIZE, posthoc = 'games-howell', corrections = F, levene = T)
@@ -349,7 +354,7 @@ The sample mean lobster size ($mm$) in the *IVEE* were *NOT significantly* diffe
 
 The sample mean lobster size ($mm$) in the *NAPL* were *NOT significantly* different between 2012 (73 ± 11.7 mm) and 2017 (76.2 ± 11.4 cm) according to a two-sample Student’s t-test (t(`r {ttest_NAPL$parameter}`) = `r {round(ttest_NAPL$statistic,3)}`, p = 0.500, $\alpha$ = 0.05).
 
-The sample mean lobster size ($mm$) in the *MOHK* were *significantly* different between 2012 (77.3 ± 10.6 mm) and 2017 (72 ± 9.28 cm) according to a two-sample Student’s t-test (t(`r {ttest_MOHK$parameter}`) = `r {round(ttest_MOHK$statistic,3)}`, p < 0.001, $\alpha$ = 0.05). Additionally, the effect size is medium 
+The sample mean lobster size ($mm$) in the *MOHK* were *significantly* different between 2012 (77.3 ± 10.6 mm) and 2017 (72 ± 9.28 cm) according to a two-sample Student’s t-test (t(`r {ttest_MOHK$parameter}`) = `r {round(ttest_MOHK$statistic,3)}`, p < 0.001, $\alpha$ = 0.05). Additionally, the effect size is moderate (`r {esize_MOHK$method}` = `r {round(esize_MOHK$estimate,2)}`).
 
 The sample mean lobster size ($mm$) in the *CARP* were *NOT significantly* different between 2012 (74.4 ± 14.6 mm) and 2017 (72.2 ± 13.2 cm) according to a two-sample Student’s t-test (t(`r {ttest_CARP$parameter}`) = `r {round(ttest_CARP$statistic,3)}`, p = 0.182, $\alpha$ = 0.05).
 
@@ -404,23 +409,23 @@ Alternative Hypothesis: Proportions of lobsters that are above the minimum size 
 **Conclusion**: Proportions of lobsters that are above the minimum size requirement do not differ significantly by site ($\chi$^2^(`r {legal_chi$parameter}`) = `r {round(legal_chi$statistic, 3)}`, p-value = `r {round(legal_chi$p.value, 3)}`,  $\alpha$ = 0.05).  
 
 ```{r}
-
-legal_chi$observed
-round(legal_chi$expected,0)
-
-legal_chi$stdres #if standardized residuals are >2 this might be driving the significant finding
-
-legal_expand <- data.frame(expand.grid(rownames(prop), colnames(prop)), value = c(prop)) # moves from a contigency table format to an expanded table format where we can expand either row or column and then by what value
-
-colnames(legal_expand) <- c("Site","Legality","Proportion")
-View(legal_expand)
-
-stacked_legal <- ggplot(legal_expand, aes(x = Site, y = Proportion)) +
-  geom_col(aes(fill = Legality), width = 0.5) +
-  theme_classic() +
-  coord_flip()
-
-stacked_legal
+# 
+# legal_chi$observed
+# round(legal_chi$expected,0)
+# 
+# legal_chi$stdres #if standardized residuals are >2 this might be driving the significant finding
+# 
+# legal_expand <- data.frame(expand.grid(rownames(prop), colnames(prop)), value = c(prop)) # moves from a contigency table format to an expanded table format where we can expand either row or column and then by what value
+# 
+# colnames(legal_expand) <- c("Site","Legality","Proportion")
+# View(legal_expand)
+# 
+# stacked_legal <- ggplot(legal_expand, aes(x = Site, y = Proportion)) +
+#   geom_col(aes(fill = Legality), width = 0.5) +
+#   theme_classic() +
+#   coord_flip()
+# 
+# stacked_legal
 ```
 
 
