@@ -89,7 +89,7 @@ traps
 ```
 **Figure 2. Lobster Trap Floats at Five Long-Term Ecological Research Sites in the Santa Barbara Channel (2012-2017).** Commerical lobster trap float counts are recorded every two to four weeks during the lobster fishing season (October to March). The abundance of lobster trap buoys are an indicator of fishing pressure. Since Naples Reef and Isla Vista are within Marine Protected Areas, tehre are no commerical trap floats deployed. Source: Reed, D. 2017. SBC LTER: Reef: Abundance, size and fishing effort for California Spiny Lobster (Panulirus interruptus), ongoing since 2012. Santa Barbara Coastal Long Term Ecological Research Project.
 
-
+Table 1. Lobster abundance (counts) and fishing pressure (trap buoys) at five Long Term Ecological Research Sites in Santa Barbara Channel (2012 -2017).
 ```{r}
 
 lsa_lt_joined <- left_join(size_summary, trap_summary, by = c("SITE", "YEAR"))
@@ -97,7 +97,6 @@ lsa_lt_joined
 
 lsa_lt_table <- kable(lsa_lt_joined, 
                       format = "markdown",
-                      caption = "Table 1. Lobster abundance (counts) and fishing pressure (trap buoys) at five Long Term Ecological Research Sites in Santa Barbara Channel (2012 -2017).",
                       col.names = c("Site", "Year", "Lobster Count", "Trap Count")) %>% 
    kable_styling(bootstrap_options = c("border","condensed","striped"))
   lsa_lt_table
@@ -142,9 +141,11 @@ lsa_site_means <- lsa_filt2017 %>%
 lsa_site_means$SITE <- factor(lsa_site_means$SITE, levels = c("IVEE","NAPL","AQUE","MOHK","CARP"))
 
 
-# levines test for equal variances
-lsa_levine <- leveneTest(SIZE ~ SITE, data = lsa_filt2017)
-lsa_levine
+# levenes test for equal variances
+lsa_levene <- leveneTest(SIZE ~ SITE, data = lsa_filt2017)
+lsa_levene
+
+#Result: variances are NOT equal, but largest variance is less than 4 times the smallest variance, so we can still do an ANOVA
 
 # anova with unequal variances
 lsa_aov_size_site <- oneway(lsa_filt2017$SITE, y = lsa_filt2017$SIZE, posthoc = 'games-howell', corrections = F, levene = T)
@@ -308,38 +309,24 @@ Significance result for nonMPA t.test between 2012 and 2017:
 effect size small:
 (Cohen's $d$ = `r round(esize_nonMPA$estimate, 2) `) 
 
-
 ```{r}
 #___________________________________part 4___________________________________#
 #Proportions of “legal” lobsters at the 5 sites in 2017
 #The legal minimum carapace size for lobster is 82.6 mm
+legal_size <- lsa_filt2017 %>%
+    mutate(
+     SIZE = case_when(
+      SIZE <= 82.6 ~ "not legal", 
+      SIZE > 82.6 ~ "legal"
+    )
+  ) %>%
+  count(SITE, SIZE) %>%
+  spread(SIZE, n) %>% 
+  select(-SITE)
+   
+rownames(legal_size)<- c('Arroyo Quemado', 'Carpenteria', 'Isla Vista', 'Mohawk Reef', 'Naples Reef')
 
-lsa_legal <- lsa_filt2017 %>% 
-  mutate(legal = case_when(
-    SIZE > 82.6 ~ "y",
-         SIZE < 82.6 ~ "n"))
-
-
-sum_legal <- lsa_legal %>% 
-  group_by(SITE) %>% 
-  filter (legal == "y") %>% 
-  summarize( 
-    legal = length(legal))
-
-sum_illegal <- lsa_legal %>% 
-  group_by(SITE) %>% 
-  filter (legal == "n") %>% 
-  summarize( 
-    illegal = length(legal))
-
-legal_joined <- left_join(sum_legal, sum_illegal, by = "SITE") %>% 
-  select(legal, illegal)
-
-rownames(legal_joined) <- c('Arroyo Quemado', 'Carpenteria', 'Isla Vista', 'Mohawk Reef', 'Naples Reef')
-
-#legal_table <- legal_joined create matrix
-
-prop <- prop.table(as.matrix(legal_joined), 1)
+prop <- prop.table(as.matrix(legal_size), 1)
 
 prop_rounded <- round (prop, 2) #Round proportions to 2 digits
 prop_rounded
@@ -350,12 +337,14 @@ prop_table <- kable(prop_rounded,
       col.names = c('Proportion Above Minimum Size', 'Proportion Below Min Size'))
 
 prop_table
-
-
-legal_chi <- chisq.test(legal_joined)
+#Run the chi-square test.
+legal_chi <- chisq.test(prop_rounded)
 legal_chi
- 
+
+
+
 ```
+
 A greater proportion of lobsters are below the legal minimum carapace size than above for all locations. The proportion of legal sized lobsters is smallest at Mohawk Reef as there is rougly 7 times more lobsters as this site that do not meet the legal minimum size. Naples Reef has the largest proportion of legal sized lobsters, roughly half that of the proportion of lobsters below the minimum size. 
 
 
@@ -368,7 +357,7 @@ A greater proportion of lobsters are below the legal minimum carapace size than 
 Null Hypothesis: Location is independent of proportions of lobsters that are above the legal minimum. 
 Alternative Hypothesis: Proportions of lobsters that are above the minimum size requirement are significantly different between sites.
 
-**Conclusion**: Proportions of lobsters that are above the minimum size requirement differs significantly by site ($\chi$^2^(`r {legal_chi$parameter}`) = `r {round(legal_chi$statistic, 3)}`, *p* < 0.001,  $\alpha$ = 0.05).  
+**Conclusion**: Proportions of lobsters that are above the minimum size requirement do not differ significantly by site ($\chi$^2^(`r {legal_chi$parameter}`) = `r {round(legal_chi$statistic, 3)}`, `r {round(legal_chi$p.value, 3)},  $\alpha$ = 0.05).  
 
 ```{r}
 
@@ -376,10 +365,8 @@ legal_chi$observed
 round(legal_chi$expected,0)
 
 legal_chi$stdres #if standardized residuals are >2 this might be driving the significant finding
-```
-Naples and Mohawk Reefs might be driving significance. 
 
-```{r}
+
 
 legal_expand <- data.frame(expand.grid(rownames(prop), colnames(prop)), value = c(prop)) # moves from a contigency table format to an expanded table format where we can expand either row or column and then by what value
 
