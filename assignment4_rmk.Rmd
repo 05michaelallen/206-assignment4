@@ -183,9 +183,9 @@ lsa_aov_colplt <- ggplot(lsa_site_means, aes(x = SITE, y = mean_size)) +
   labs(y=expression(Mean~lobster~carapace~length~(mm))) +
   scale_x_discrete(labels = c("Isla Vista","Naples Reef","Arroyo Quemado","Mohawk Reef", "Carpenteria")) +
   annotate("text", x = c(1), y = yloc_i, label = "a") +
-  annotate("text", x = c(2), y = yloc_n, label = "a, b, c") +
+  annotate("text", x = c(2), y = yloc_n, label = "a, b") +
   annotate("text", x = c(5), y = yloc_c, label = "b") +
-  annotate("text", x = c(4), y = yloc_m, label = "c") +
+  #annotate("text", x = c(4), y = yloc_m, label = "c") +
   xlab("\nSite")
 lsa_aov_colplt
 
