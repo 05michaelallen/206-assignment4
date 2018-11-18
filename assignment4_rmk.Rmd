@@ -17,6 +17,7 @@ library(userfriendlyscience)
 library(knitr)
 library(kableExtra)
 library(effsize)
+library(gridExtra)
 
 lsa <- read_csv("lobster_size_abundance.csv")
 lt <- read_csv("lobster_traps.csv")
@@ -53,15 +54,15 @@ size_summary <- lsa_filt %>%
 size_summary
 labels <- c(AQUE = "Arroyo Quemado", CARP = "Carpinteria", IVEE = "Isla Vista", MOHK = "Mohawk Reef", NAPL = "Naples Reef")
 abundance <- ggplot(size_summary, aes(x = YEAR, y = lobster_count))+
-  geom_col(aes(fill = SITE)) +
+  geom_col() +
   scale_y_continuous(expand = c(0,0)) +
   theme_classic() +
   xlab("\nYear") +
   ylab("Lobster Count\n") +
-  facet_wrap(~SITE, scale = "free", labeller = labeller(SITE = labels)) +
+  facet_wrap(~SITE, labeller = labeller(SITE = labels)) +
   theme(legend.position = "none") +
   theme(panel.spacing = unit(1, "lines"))
-abundance
+
   
 ```
 **Figure 1. Abundance of the California Spiny Lobster at Five Long-Term Ecological Research Sites in the Santa Barbara Channel (2012-2017).** Lobster abundance data for Panulirus interruptus are collected by divers at five sites each year in late summer, before the start of the fishing season. These sites include Arroyo Quemado, Naples Reef, Mohawk Reef, Isla Vista, and Carpinteria. Naples Reef and Isla Vista are within marine protected areas; Arroyo Quemado, Mohawk, and Carpenteria are outside marine protected areas. Source: Reed, D. 2017. SBC LTER: Reef: Abundance, size and fishing effort for California Spiny Lobster (Panulirus interruptus), ongoing since 2012. Santa Barbara Coastal Long Term Ecological Research Project.
@@ -71,21 +72,24 @@ abundance
 #Column graph of fishing pressure (trap buoys) by year at each of the 5 sites
 trap_summary <- lt_filt %>% 
   group_by(SITE, YEAR) %>% 
-  filter(YEAR == "2012" | YEAR == "2013" | YEAR == "2014" | YEAR == "2015" | YEAR == "2016" | YEAR == "2017") %>% 
+  filter(FISHING_SEASON == "2012-2013" | FISHING_SEASON == "2013-2014" | FISHING_SEASON == "2014-2015" | FISHING_SEASON == "2015-2016" | FISHING_SEASON == "2016-2017") %>% 
   summarize(
     trap_count = sum(TRAPS)
   )
-traps <- ggplot(lt_filt, aes(x = YEAR, y = TRAPS))+
-  geom_col(aes(fill = SITE)) +
+traps <- ggplot(lt_filt, aes(x = FISHING_SEASON, y = TRAPS))+
+  geom_col() +
   scale_y_continuous(expand = c(0,0)) +
   theme_classic() +
-  xlab("\nYear") +
+  xlab("\nFishing Season") +
   ylab("Number of Traps\n") +
-  facet_wrap(~SITE, scale = "free", labeller = labeller(SITE = labels)) +
+  facet_wrap(~SITE, labeller = labeller(SITE = labels)) +
   theme(legend.position = "none") +
-  theme(panel.spacing = unit(1, "lines"))
-  
-traps
+  theme(panel.spacing = unit(1, "lines")) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+combined <- grid.arrange(abundance, traps, nrow = 2)
+combined
+
 ```
 **Figure 2. Lobster Trap Floats at Five Long-Term Ecological Research Sites in the Santa Barbara Channel (2012-2017).** Commerical lobster trap float counts are recorded every two to four weeks during the lobster fishing season (October to March). The abundance of lobster trap buoys are an indicator of fishing pressure. Since Naples Reef and Isla Vista are within Marine Protected Areas, there are no commerical trap floats deployed. Source: Reed, D. 2017. SBC LTER: Reef: Abundance, size and fishing effort for California Spiny Lobster (Panulirus interruptus), ongoing since 2012. Santa Barbara Coastal Long Term Ecological Research Project.
 
