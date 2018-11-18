@@ -149,15 +149,15 @@ lsa_site_means$SITE <- factor(lsa_site_means$SITE, levels = c("IVEE","NAPL","AQU
 lsa_levene <- leveneTest(SIZE ~ SITE, data = lsa_filt2017)
 lsa_levene
 
-lobster_anova <- aov(SIZE ~ SITE, data = lsa_filt2017)
-summary(lobster_anova)
+#lobster_anova <- aov(SIZE ~ SITE, data = lsa_filt2017)
+#summary(lobster_anova)
 
-lobster_tukey <- TukeyHSD(lobster_anova)
-lobster_tukey 
+#lobster_tukey <- TukeyHSD(lobster_anova)
+#lobster_tukey 
 # There is a significant difference between NAPL-CARP, NAPL-IVEE at alpha=.05
 
 # anova with unequal variances
-lsa_aov_size_site <- oneway(lsa_filt2017$SITE, y = lsa_filt2017$SIZE, posthoc = 'games-howell', corrections = F, levene = T)
+lsa_aov_size_site <- oneway(lsa_filt2017$SITE, y = lsa_filt2017$SIZE, posthoc = 'tukey', corrections = F, levene = T)
 lsa_aov_size_site
 
 # y loc for annotations
@@ -187,9 +187,9 @@ lsa_aov_colplt <- ggplot(lsa_site_means, aes(x = SITE, y = mean_size)) +
   labs(y=expression(Mean~lobster~carapace~length~(mm))) +
   scale_x_discrete(labels = c("Isla Vista","Naples Reef","Arroyo Quemado","Mohawk Reef", "Carpenteria")) +
   annotate("text", x = c(1), y = yloc_i, label = "a") +
-  annotate("text", x = c(2), y = yloc_n, label = "a, b, c") +
+  annotate("text", x = c(2), y = yloc_n, label = "a, b") +
   annotate("text", x = c(5), y = yloc_c, label = "b") +
-  annotate("text", x = c(4), y = yloc_m, label = "c") +
+  #annotate("text", x = c(4), y = yloc_m, label = "c") +
   xlab("\nSite")
 lsa_aov_colplt
 
